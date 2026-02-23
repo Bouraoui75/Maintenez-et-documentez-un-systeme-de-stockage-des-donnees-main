@@ -1,0 +1,27 @@
+Environment variables
+
+.env
+
+Virtual environment
+
+.venv/ venv/
+
+Python cache
+
+pycache/ .pyc .pyo *.pyd
+
+Pytest
+
+.pytest_cache/
+
+Coverage
+
+.coverage htmlcov/ .coverage.*
+
+OS files
+
+.DS_Store Thumbs.db
+
+IDE
+
+.vscode/ .idea/

@@ -1,0 +1,4 @@
+# Dépendances principales
+pytest
+pytest-cov
+mongomock
