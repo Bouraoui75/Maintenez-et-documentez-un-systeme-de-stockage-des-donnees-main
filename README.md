@@ -1,123 +1,140 @@
-
-# Migration et Maintenance d’un Système de Stockage MongoDB
+# Migration et Maintenance d'un Système de Stockage MongoDB
 
 ## Objectif du projet
 
-Ce projet met en place un système de stockage de données basé sur MongoDB avec :
+Ce projet met en place un système de stockage de données basé sur
+MongoDB avec :
 
-- Un conteneur MongoDB (Docker)
-- Un script de migration (`loader.py`)
-- Une initialisation automatique de la base
-- Des tests unitaires avec couverture de code
+-   Un conteneur MongoDB (Docker)
+-   Un script de migration (`loader.py`)
+-   Une initialisation automatique de la base
+-   Des tests unitaires avec couverture de code
 
-Les données proviennent d’un fichier CSV : `healthcare_dataset.csv`.
+Les données proviennent d'un fichier CSV : `healthcare_dataset.csv`.
 
----
+------------------------------------------------------------------------
 
 ## Architecture du projet
 
-```
-.
-├── loader/                # Script de migration des données
-├── initdb/                # Script d'initialisation Mongo
-├── data/                  # Dataset CSV
-├── test_unitaire/         # Tests unitaires
-├── docker-compose.yml     # Orchestration des conteneurs
-├── requirements.txt       # Dépendances principales
-├── pytest.ini
-└── README.md
+    .
+    ├── loader/                
+    ├── initdb/                
+    ├── data/                  
+    ├── test_unitaire/         
+    ├── docker-compose.yml     
+    ├── requirements.txt       
+    ├── pytest.ini
+    └── README.md
+
+------------------------------------------------------------------------
+
+# Schéma de la base de données
+
+La base `healthcare` contient une collection principale :
+
+### Collection : `patients`
+
+Exemple de document :
+
+``` json
+{
+  "_id": ObjectId("..."),
+  "patient_id": "12345",
+  "name": "John Doe",
+  "age": 45,
+  "gender": "Male",
+  "admission_date": ISODate("2024-01-12T00:00:00Z")
+}
 ```
 
----
+### Indexation
+
+-   Index par défaut sur `_id`
+-   Index unique dynamique sur la clé primaire détectée (ex :
+    `patient_id`)
+-   Garantie d'unicité et d'idempotence
+
+------------------------------------------------------------------------
+
+# Authentification et rôles utilisateurs
+
+L'authentification MongoDB est activée.
+
+Les utilisateurs sont créés automatiquement via `init-mongo.js`.
+
+  Utilisateur    Rôle
+  -------------- ----------------------------------
+  appuser        readWrite sur healthcare
+  readOnlyUser   read sur healthcare
+  supportUser    read, readWrite, dbAdmin
+  adminUser      readWrite, dbAdmin, clusterAdmin
+  admin          root (base admin)
+
+Principe du moindre privilège respecté.
+
+------------------------------------------------------------------------
+
+# Sécurité des mots de passe
+
+MongoDB ne stocke jamais les mots de passe en clair.
+
+Les mots de passe sont automatiquement : - Hachés via SCRAM - Basés sur
+SHA-256 - Non réversibles
+
+------------------------------------------------------------------------
 
 ## Lancement rapide
 
-### 1) Configurer l’environnement
+### 1) Configurer l'environnement
 
-```bash
+``` bash
 cp env.example .env
 ```
 
-Modifier si nécessaire les variables (utilisateur, mot de passe, base, etc.).
-
 ### 2) Démarrer le projet
 
-```bash
+``` bash
 docker compose up -d --build
 ```
 
 ### 3) Vérifier les conteneurs
 
-```bash
+``` bash
 docker compose ps
 ```
 
 ### 4) Vérifier les logs
 
-```bash
+``` bash
 docker compose logs loader
 docker compose logs mongo
 ```
 
-Le loader doit afficher l’insertion des documents (ex: 54 966 documents insérés).
-
----
+------------------------------------------------------------------------
 
 ## Tests unitaires
 
-### Installation des dépendances de test
-
-```bash
+``` bash
 pip install pytest pytest-cov mongomock
-```
-
-### Lancer les tests
-
-```bash
-pytest
-```
-
-### Couverture de code
-
-```bash
 pytest --cov=loader --cov-report=term-missing
 ```
 
----
+Couverture actuelle : 92% sur loader/loader.py
 
-## Connexion à MongoDB
+------------------------------------------------------------------------
 
-MongoDB est exposé sur :
+# CE2 - Qualité de l'implémentation
 
-```
-localhost:27017
-```
+-   Configuration externalisée via `.env`
+-   Séparation des responsabilités (Docker / Loader / Mongo)
+-   Pipeline idempotente (bulk_upsert + index unique)
+-   Tests unitaires (92% de couverture)
+-   Authentification sécurisée et gestion des rôles
+-   Logging structuré
 
-Connexion via MongoDB Compass :
-
-```
-mongodb://appuser:<mot_de_passe>@localhost:27017/healthcare?authSource=admin
-```
-
----
-
-## Fonctionnement de la migration
-
-1. Docker démarre MongoDB  
-2. Le script `init-mongo.js` initialise la base  
-3. `loader.py` lit le CSV, transforme les données et insère les documents dans MongoDB  
-4. Les tests utilisent `mongomock` pour simuler MongoDB  
-
----
-
-## Bonnes pratiques
-
-- Le fichier `.env` n’est pas versionné  
-- Les dossiers `__pycache__`, `.venv`, `.pytest_cache` sont ignorés  
-- Les tests ne dépendent pas d’un Mongo réel  
-
----
+------------------------------------------------------------------------
 
 ## Auteur
 
-Projet réalisé dans le cadre du module de maintenance et documentation d’un système de stockage de données.
+Projet réalisé dans le cadre du module de maintenance et documentation
+d'un système de stockage de données.
